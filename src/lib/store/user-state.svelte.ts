@@ -1,14 +1,8 @@
+import { goto } from "$app/navigation"
+import { page } from "$app/state"
 import { getFirebaseState } from "$lib/firebase"
-import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithRedirect, type Auth } from "firebase/auth"
+import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, type Auth, type User } from "firebase/auth"
 import { collection, getFirestore, type CollectionReference, type Firestore } from "firebase/firestore"
-
-export type User = {
-  id: string
-  name: string
-  memeRatings: {
-    [id: string]: boolean
-  }
-}
 
 class UserState {
   static instance: UserState
@@ -16,6 +10,7 @@ class UserState {
   auth: Auth
   collection: CollectionReference
   loading = $state(false)
+  user: User | null = $state(null)
 
   constructor() {
     const firebaseState = getFirebaseState()
@@ -26,16 +21,16 @@ class UserState {
 
   ensureLogin = async () => {
     onAuthStateChanged(this.auth, (user) => {
-      console.log("user", user)
+      const searchParams = new URLSearchParams()
+      searchParams.set('redirect', page.url.pathname)
+      if (!user) goto('/auth/login?' + searchParams.toString())
+      this.user = user
     })
   }
 
   login = async () => {
     const provider = new GoogleAuthProvider()
-    signInWithRedirect(this.auth, provider)
-      .then((result) => {
-        console.log("end", result)
-      })
+    return await signInWithPopup(this.auth, provider)
   }
 }
 
