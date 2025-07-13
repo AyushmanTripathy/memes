@@ -1,9 +1,26 @@
 <script lang="ts">
+  import { goto } from "$app/navigation";
   import type { HTMLButtonAttributes } from "svelte/elements";
 
-  const { ...props }: HTMLButtonAttributes = $props();
+  interface Props extends HTMLButtonAttributes {
+    href?: string;
+  }
+  const { ...props }: Props = $props();
 </script>
 
-<button {...props} class="cursor-pointer flex gap-2 bg-gray-900 p-3 rounded-2xl {props.class}">
-  {@render props?.children?.()}
-</button>
+{#if props?.href}
+  <button
+    {...props}
+    onclick={() => goto(props?.href)}
+    class="cursor-pointer flex gap-2 bg-gray-900 p-3 rounded-2xl {props.class}"
+  >
+    {@render props?.children?.()}
+  </button>
+{:else}
+  <button
+    {...props}
+    class="cursor-pointer flex gap-2 bg-gray-900 p-3 rounded-2xl {props.class}"
+  >
+    {@render props?.children?.()}
+  </button>
+{/if}

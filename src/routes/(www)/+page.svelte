@@ -3,9 +3,12 @@
   import { LoaderCircle } from "@lucide/svelte";
   import { getMemeState, type Meme } from "$lib/store/meme-state.svelte";
   import { onMount } from "svelte";
+    import { getUserState } from "$lib/store/user-state.svelte";
 
   const memeState = getMemeState();
+  const userState = getUserState();
   $inspect(memeState.memes);
+  $inspect(userState.user)
 
   const memes: Record<number, Meme> = {};
   let loading = $state(false);
@@ -17,8 +20,8 @@
     return memes[index];
   };
 
-  function onSwipe(cardInfo: any) {
-    console.log("swiped", cardInfo);
+  function onSwipe(cardInfo: { direction: string, data: Meme}) {
+    userState.rateMeme($state.snapshot(cardInfo.data), cardInfo.direction == 'right')
   }
 
   onMount(async () => {

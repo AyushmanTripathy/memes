@@ -101,5 +101,6 @@
   {:else}
     Total no of memes: {metadata.count}
     <Button onclick={updateMemes}>Upload new memes</Button>
+    <Button href="/" onclick={updateMemes}> Go back to memes </Button>
   {/if}
 </div>
