@@ -5,7 +5,7 @@
 </script>
 
 <div
-  class="w-full h-full absolute cursor-grab ease-in-out rounded-xl touch-none select-none border border-black bg-black"
+  class="w-full h-full absolute cursor-grab ease-in-out rounded-xl touch-none select-none bg-black"
   bind:this={element}
 >
   {#key url}
