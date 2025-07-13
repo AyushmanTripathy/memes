@@ -22,7 +22,7 @@
   ></div>
   <div class="p-4 absolute bottom-0 w-full flex justify-center">
     <div class="flex items-center flex-col">
-      <h3 class="text-3xl bg-black font-semibold px-3 py-1 rounded-2xl">{title}</h3>
+      <h3 class="text-sm text-center md:text-base lg:text-3xl bg-black font-semibold px-3 py-1 rounded-2xl">{title}</h3>
       <p>{description}</p>
     </div>
   </div>

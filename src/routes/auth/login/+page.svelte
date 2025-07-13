@@ -15,7 +15,7 @@
     try {
       const result = await userState.login();
       if (!result) return;
-      await goto(page.url.searchParams.get("redirect") || "/");
+      await goto(page.url.searchParams.get("redirect") || "/", { replaceState: true });
     } catch (e: any) {
       errorCode = e.code;
     } finally {

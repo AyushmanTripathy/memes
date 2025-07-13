@@ -2,14 +2,24 @@ import { goto } from "$app/navigation"
 import { page } from "$app/state"
 import { getFirebaseState } from "$lib/firebase"
 import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, type Auth, type User } from "firebase/auth"
-import { collection, getFirestore, type CollectionReference, type Firestore } from "firebase/firestore"
-import type { Meme } from "./meme-state.svelte"
+import { collection, doc, DocumentReference, getDoc, getFirestore, setDoc, updateDoc, type CollectionReference, type Firestore } from "firebase/firestore"
+import { getMemeState, LAST_SEEN_INDEX_KEY, type Meme } from "./meme-state.svelte"
+
+export interface UserDoc {
+  name: string
+  photoURL: string
+  email: string
+  liked: number[]
+  disliked: number[]
+  lastRatedIndex: number
+}
 
 class UserState {
   static instance: UserState
   db: Firestore
   auth: Auth
-  collection: CollectionReference
+  docRef: DocumentReference | null = null
+  doc: UserDoc | null = null
   loading = $state(false)
   user: User | null = $state(null)
 
@@ -17,17 +27,42 @@ class UserState {
     const firebaseState = getFirebaseState()
     this.db = getFirestore(firebaseState.app)
     this.auth = getAuth(firebaseState.app)
-    this.collection = collection(this.db, "users")
   }
 
   ensureLogin = async () => {
     this.loading = true
-    onAuthStateChanged(this.auth, (user) => {
+    onAuthStateChanged(this.auth, async (user) => {
+      const memeState = getMemeState()
       const searchParams = new URLSearchParams()
       searchParams.set('redirect', page.url.pathname)
-      this.loading = false
-      if (!user) goto('/auth/login?' + searchParams.toString())
-      this.user = user
+      if (!user?.uid) {
+        this.loading = false
+        await goto('/auth/login?' + searchParams.toString())
+      }
+
+      try {
+        this.docRef = doc(this.db, "users", user?.uid);
+        this.doc = (await getDoc(this.docRef)).data() as UserDoc;
+
+        console.log("doc data", this.doc);
+        if (!this.doc) {
+          this.doc = {
+            name: user?.displayName || "",
+            email: user?.email || "",
+            photoURL: user?.photoURL || "",
+            liked: [],
+            disliked: [],
+            lastRatedIndex: memeState.lastSeenIndex || 0,
+          }
+          console.log("user doc not found, creating new")
+          await setDoc(this.docRef, { ...this.doc });
+        }
+        this.user = user
+      } catch (e: any) {
+        console.error("while syncing user doc", e)
+      } finally {
+        this.loading = false
+      }
     })
   }
 
@@ -61,7 +96,24 @@ class UserState {
   }
 
   rateMeme = async (liked: boolean, meme: Meme) => {
-    console.log("meme", meme, "liked", liked)
+    try {
+      localStorage.setItem(LAST_SEEN_INDEX_KEY, String(meme.index))
+
+      if (!this.doc || !this.docRef) throw 'User doc or ref not found'
+      if (this.doc.liked.includes(meme.index) || this.doc.disliked.includes(meme.index))
+        throw "Meme already rated"
+
+      if (liked)
+        this.doc.liked.push(meme.index)
+      else
+        this.doc.disliked.push(meme.index)
+
+      this.doc.lastRatedIndex = meme.index
+
+      await updateDoc(this.docRef, { ...this.doc })
+    } catch (e) {
+      console.error("failed to rate meme", e)
+    }
   }
 }
 

@@ -11,14 +11,14 @@ export type Meme = {
 }
 
 const BATCH_SIZE = 10
-const LAST_SEEN_INDEX_KEY = "lastSeenMemeIndex"
+export const LAST_SEEN_INDEX_KEY = "lastSeenMemeIndex"
 
 class MemeState {
   static instance: MemeState
   db: Firestore
   collection: CollectionReference
   fetching = $state(false)
-  lastSeenIndex: number
+  lastSeenIndex: number = $state(0)
 
   memes: Meme[] = $state([])
 
@@ -39,7 +39,7 @@ class MemeState {
   fetchOne = async (): Promise<Meme> => {
     const filterIndex = this.lastSeenIndex++
 
-    this.memes = this.memes.filter(x => x.index > filterIndex)
+    this.memes = this.memes.filter(x => x.index >= filterIndex)
     if (this.memes.length)
       return this.memes[0]
 
