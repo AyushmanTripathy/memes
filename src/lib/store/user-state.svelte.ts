@@ -6,6 +6,7 @@ import { collection, doc, DocumentReference, getDoc, getFirestore, setDoc, updat
 import { getMemeState, LAST_SEEN_INDEX_KEY, type Meme } from "./meme-state.svelte"
 
 export interface UserDoc {
+  uid: string
   name: string
   photoURL: string
   email: string
@@ -19,7 +20,7 @@ class UserState {
   db: Firestore
   auth: Auth
   docRef: DocumentReference | null = null
-  doc: UserDoc | null = null
+  userDoc: UserDoc | null = $state(null)
   loading = $state(false)
   user: User | null = $state(null)
 
@@ -38,15 +39,15 @@ class UserState {
       if (!user?.uid) {
         this.loading = false
         await goto('/auth/login?' + searchParams.toString())
+        return;
       }
 
       try {
         this.docRef = doc(this.db, "users", user?.uid);
-        this.doc = (await getDoc(this.docRef)).data() as UserDoc;
-
-        console.log("doc data", this.doc);
-        if (!this.doc) {
-          this.doc = {
+        this.userDoc = (await getDoc(this.docRef)).data() as UserDoc;
+        if (!this.userDoc) {
+          this.userDoc = {
+            uid: user?.uid || "",
             name: user?.displayName || "",
             email: user?.email || "",
             photoURL: user?.photoURL || "",
@@ -55,7 +56,7 @@ class UserState {
             lastRatedIndex: memeState.lastSeenIndex || 0,
           }
           console.log("user doc not found, creating new")
-          await setDoc(this.docRef, { ...this.doc });
+          await setDoc(this.docRef, { ...this.userDoc });
         }
         this.user = user
       } catch (e: any) {
@@ -99,18 +100,18 @@ class UserState {
     try {
       localStorage.setItem(LAST_SEEN_INDEX_KEY, String(meme.index))
 
-      if (!this.doc || !this.docRef) throw 'User doc or ref not found'
-      if (this.doc.liked.includes(meme.index) || this.doc.disliked.includes(meme.index))
+      if (!this.userDoc || !this.docRef) throw 'User doc or ref not found'
+      if (this.userDoc.liked.includes(meme.index) || this.userDoc.disliked.includes(meme.index))
         throw "Meme already rated"
 
       if (liked)
-        this.doc.liked.push(meme.index)
+        this.userDoc.liked.push(meme.index)
       else
-        this.doc.disliked.push(meme.index)
+        this.userDoc.disliked.push(meme.index)
 
-      this.doc.lastRatedIndex = meme.index
+      this.userDoc.lastRatedIndex = meme.index
 
-      await updateDoc(this.docRef, { ...this.doc })
+      await updateDoc(this.docRef, { ...this.userDoc })
     } catch (e) {
       console.error("failed to rate meme", e)
     }

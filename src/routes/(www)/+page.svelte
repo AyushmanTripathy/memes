@@ -7,14 +7,13 @@
 
   const memeState = getMemeState();
   const userState = getUserState();
-  $inspect(userState.user)
-  $inspect("user doc", userState.doc)
+  $inspect("user doc", userState.userDoc)
   $inspect("meme last seen index", memeState.lastSeenIndex)
 
   const memes: Record<number, Meme> = {};
   let loading = $state(false);
 
-  const getCardData = async (index: number): Meme => {
+  const getCardData = async (index: number): Promise<Meme> => {
     console.log("fetching", index)
     if (index in memes) return memes[index];
     memes[index] = await memeState.fetchOne();
