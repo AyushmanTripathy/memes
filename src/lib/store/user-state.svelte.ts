@@ -88,6 +88,10 @@ class UserState {
 
       this.loading = true
       await this.auth.signOut()
+
+      const searchParams = new URLSearchParams()
+      searchParams.set('redirect', page.url.pathname)
+      await goto('/auth/login?' + searchParams.toString())
       this.user = null
     } catch (e: any) {
       console.error(e)
