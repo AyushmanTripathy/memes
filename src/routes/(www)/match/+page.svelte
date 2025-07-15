@@ -47,6 +47,8 @@
       snapshot.forEach((doc) => {
         const otherDoc = doc.data() as UserDoc;
         if (otherDoc.uid == userDoc.uid) return;
+        if (otherDoc.liked.length + otherDoc.disliked.length < 1)
+          return;
 
         friends.push({
           ...otherDoc,
